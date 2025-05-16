@@ -1,36 +1,16 @@
-import fs from 'fs';
-import path from 'path';
+let database = []
 
 export default async function handler(req, res) {
-  const filePath = '/tmp/logs.json';
-
   if (req.method === 'POST') {
-    const { latitude, longitude } = req.body;
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
-    const newData = {
-      ip,
-      latitude,
-      longitude,
-      date: new Date().toISOString()
-    };
+    const { latitude, longitude } = req.body
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress
+    const waktu = new Date().toLocaleString('id-ID')
 
-    let logs = [];
-    if (fs.existsSync(filePath)) {
-      logs = JSON.parse(fs.readFileSync(filePath));
-    }
-    logs.push(newData);
-    fs.writeFileSync(filePath, JSON.stringify(logs, null, 2));
-    return res.status(200).json({ status: 'ok' });
+    database.push({ ip, latitude, longitude, waktu })
+    res.status(200).json({ message: 'Lokasi tersimpan' })
+  } else if (req.method === 'GET') {
+    res.status(200).json(database)
+  } else {
+    res.status(405).end()
   }
-
-  if (req.method === 'GET') {
-    if (fs.existsSync(filePath)) {
-      const logs = JSON.parse(fs.readFileSync(filePath));
-      return res.status(200).json(logs);
-    } else {
-      return res.status(200).json([]);
-    }
-  }
-
-  return res.status(405).end();
 }
